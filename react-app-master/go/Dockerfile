@@ -54,8 +54,8 @@ USER 10014
 # gnupg: Required to verify OpenSSL artefacts
 # libncurses5-dev: Required for Erlang/OTP new shell & observer_cli - https://github.com/zhongwencool/observer_cli
 RUN set -eux; \
-	OPENSSL_SOURCE_URL="https://www.openssl.org/source/openssl-$OPENSSL_VERSION.tar.gz"; \
-	OPENSSL_PATH="/usr/local/src/openssl-$OPENSSL_VERSION"; \
+	OPENSSL_SOURCE_URL="https://www.openssl.org/source/openssl-3.1.0.tar.gz"; \
+	OPENSSL_PATH="/usr/local/src/openssl-3.1.0"; \
 	OPENSSL_CONFIG_DIR=/usr/local/etc/ssl; \
 	\
 # Required by the crypto & ssl Erlang/OTP applications
