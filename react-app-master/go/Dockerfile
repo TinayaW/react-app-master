@@ -35,7 +35,7 @@ ENV OTP_VERSION 25.3.2.3
 # https://erlang.org/pipermail/erlang-questions/2019-January/097067.html
 ENV OTP_SOURCE_SHA256="8c1e8811201d1e9cc806b74393db16e89a119f412e16bb5f6181d54cd102eb4f"
 
-ARG USERNAME=user-name-goes-here
+ARG USERNAME=10001
 ARG USER_UID=10001
 ARG USER_GID=$USER_UID
 
