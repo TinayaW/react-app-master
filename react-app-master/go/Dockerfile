@@ -35,26 +35,18 @@ ENV OTP_VERSION 25.3.2.3
 # https://erlang.org/pipermail/erlang-questions/2019-January/097067.html
 ENV OTP_SOURCE_SHA256="8c1e8811201d1e9cc806b74393db16e89a119f412e16bb5f6181d54cd102eb4f"
 
-ARG USERNAME=user-name-goes-here
-ARG USER_UID=10014
-ARG USER_GID=$USER_UID
-
-# Create the user
-RUN groupadd --gid $USER_GID $USERNAME \
-	&& useradd --uid $USER_UID --gid $USER_GID -m $USERNAME \
-	#
-	# [Optional] Add sudo support. Omit if you don't need to install software after connecting.
-	&& apt-get update \
-	&& apt-get install -y sudo \
-	&& echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME \
-	&& chmod 0440 /etc/sudoers.d/$USERNAME
-
-# ********************************************************
-# * Anything else you want to do like clean up goes here *
-# ********************************************************
-
-# [Optional] Set the default user. Omit if you want to keep the default as root.
-USER $USERNAME
+# Create a user with a known UID/GID within range 10000-20000.
+# This is required by Choreo to run the container as a non-root user.
+RUN adduser \
+	--disabled-password \
+	--gecos "" \
+	--home "/nonexistent" \
+	--shell "/sbin/nologin" \
+	--no-create-home \
+	--uid 10014 \
+	"choreo"
+# Use the above created unprivileged user
+USER 10014
 
 # Install dependencies required to build Erlang/OTP from source
 # https://erlang.org/doc/installation_guide/INSTALL.html
