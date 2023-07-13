@@ -54,26 +54,26 @@ USER 10014
 # gnupg: Required to verify OpenSSL artefacts
 # libncurses5-dev: Required for Erlang/OTP new shell & observer_cli - https://github.com/zhongwencool/observer_cli
 RUN set -eux; \
-	OPENSSL_SOURCE_URL="https://www.openssl.org/source/openssl-3.1.0.tar.gz"; \
-	OPENSSL_PATH="/usr/local/src/openssl-3.1.0"; \
+	OPENSSL_SOURCE_URL="https://www.openssl.org/source/openssl-$OPENSSL_VERSION.tar.gz"; \
+	OPENSSL_PATH="/usr/local/src/openssl-$OPENSSL_VERSION"; \
 	OPENSSL_CONFIG_DIR=/usr/local/etc/ssl; \
 	\
 # Required by the crypto & ssl Erlang/OTP applications
-	wget --progress dot:giga --output-document "/usr/local/src/openssl-3.1.0.tar.gz.asc" "https://www.openssl.org/source/openssl-3.1.0.tar.gz.asc"; \
-	wget --progress dot:giga --output-document "/usr/local/src/openssl-3.1.0.tar.gz" "https://www.openssl.org/source/openssl-3.1.0.tar.gz"; \
+	wget --progress dot:giga --output-document "$OPENSSL_PATH.tar.gz.asc" "$OPENSSL_SOURCE_URL.asc"; \
+	wget --progress dot:giga --output-document "$OPENSSL_PATH.tar.gz" "$OPENSSL_SOURCE_URL"; \
 	export GNUPGHOME="$(mktemp -d)"; \
 	for key in $OPENSSL_PGP_KEY_IDS; do \
 		gpg --batch --keyserver "$PGP_KEYSERVER" --recv-keys "$key"; \
 	done; \
-	gpg --batch --verify "/usr/local/src/openssl-3.1.0.tar.gz.asc" "/usr/local/src/openssl-3.1.0.tar.gz"; \
+	gpg --batch --verify "$OPENSSL_PATH.tar.gz.asc" "$OPENSSL_PATH.tar.gz"; \
 	gpgconf --kill all; \
 	rm -rf "$GNUPGHOME"; \
-	echo "$OPENSSL_SOURCE_SHA256 */usr/local/src/openssl-3.1.0.tar.gz" | sha256sum --check --strict -; \
-	mkdir -p "/usr/local/src/openssl-3.1.0"; \
-	tar --extract --file "/usr/local/src/openssl-3.1.0.tar.gz" --directory "/usr/local/src/openssl-3.1.0" --strip-components 1; \
+	echo "$OPENSSL_SOURCE_SHA256 *$OPENSSL_PATH.tar.gz" | sha256sum --check --strict -; \
+	mkdir -p "$OPENSSL_PATH"; \
+	tar --extract --file "$OPENSSL_PATH.tar.gz" --directory "$OPENSSL_PATH" --strip-components 1; \
 	\
 # Configure OpenSSL for compilation
-	cd "/usr/local/src/openssl-3.1.0"; \
+	cd "$OPENSSL_PATH"; \
 # without specifying "--libdir", Erlang will fail during "crypto:supports()" looking for a "pthread_atfork" function that doesn't exist (but only on arm32v7/armhf??)
 	debMultiarch="$(dpkg-architecture --query DEB_HOST_MULTIARCH)"; \
 # OpenSSL's "config" script uses a lot of "uname"-based target detection...
@@ -83,7 +83,7 @@ RUN set -eux; \
 	BUILD='???' \
 	./config \
 		enable-fips \
-	--openssldir="/usr/local/etc/ssl" \
+	--openssldir="$OPENSSL_CONFIG_DIR" \
 		--libdir="/usr/local/lib/$debMultiarch" \
 # add -rpath to avoid conflicts between our OpenSSL's "libssl.so" and the libssl package by making sure /usr/local/lib/$debMultiarch is searched first (but only for Erlang/OpenSSL to avoid issues with other tools using libssl; https://github.com/docker-library/rabbitmq/issues/364)
 		-Wl,-rpath="/usr/local/lib/$debMultiarch" \
@@ -93,8 +93,8 @@ RUN set -eux; \
 	make install_sw install_ssldirs install_fips; \
 	ldconfig; \
 # use Debian's CA certificates
-	rmdir "/usr/local/etc/ssl/certs" "/usr/local/etc/ssl/private"; \
-	ln -sf /etc/ssl/certs /etc/ssl/private "/usr/local/etc/ssl"
+	rmdir "$OPENSSL_CONFIG_DIR/certs" "$OPENSSL_CONFIG_DIR/private"; \
+	ln -sf /etc/ssl/certs /etc/ssl/private "$OPENSSL_CONFIG_DIR"
 
 # smoke test
 RUN openssl version
